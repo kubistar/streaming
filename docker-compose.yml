@@ -14,11 +14,15 @@ services:
     image: mysql:8.0
     container_name: mysql
     environment:
-      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_ROOT_PASSWORD: mysql1234
       MYSQL_DATABASE: streaming
+      MYSQL_BIND_ADDRESS: 0.0.0.0
     ports:
       - "3306:3306"
+
+
+
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p1234 && sleep 5"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -pmysql1234"]
       interval: 5s
       retries: 10
