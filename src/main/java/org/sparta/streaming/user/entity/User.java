@@ -1,59 +1,32 @@
 package org.sparta.streaming.user.entity;
 
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.antlr.v4.runtime.misc.NotNull;
-import org.springframework.transaction.annotation.Transactional;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.Builder;
-
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
+@Data
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Getter
-@Table(name = "users")
-public class User extends Timestamped{
+@AllArgsConstructor(access = AccessLevel.PUBLIC)
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_id")
-    private Long id;
+    private Long userId;
 
-    @NotNull
     @Column(nullable = false, unique = true)
-    private String email;
+    private String useremail;
 
     @Column(nullable = false)
     private String password;
 
-    private String refreshToken;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
 
-    @Column(columnDefinition = "varchar(30)")
-    @Enumerated(value = EnumType.STRING)
-    private UserRoleEnum userRole;
-
-
-    @Builder
-    public User(String email, String password, String refreshToken, UserRoleEnum userRole) {
-        this.email = email;
+    public User(String useremail, String password) {
+        this.useremail = useremail;
         this.password = password;
-        this.refreshToken = refreshToken;
-        this.userRole = userRole;
-    }
-
-    //로그인시 리프레시 토큰 초기화
-    @Transactional
-    public void refreshTokenReset(String refreshToken) {
-        this.refreshToken = refreshToken;
+        this.role = Role.USER;
     }
 }

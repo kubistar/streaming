@@ -1,39 +1,38 @@
 package org.sparta.streaming.user.jwt;
 
-import java.io.IOException;
 
-import org.sparta.streaming.user.dto.LoginRequestDTO;
-import org.sparta.streaming.user.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.sparta.streaming.user.dto.LoginRequest;
 import org.sparta.streaming.user.service.UserDetailsImpl;
+import org.sparta.streaming.user.util.JwtUtil;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
 
 @Slf4j(topic = "로그인 및 JWT 생성")
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
-
     private final JwtUtil jwtUtil;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserRepository userRepository) {
+    public JwtAuthenticationFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
+//        setFilterProcessesUrl("/api/v1/user/login");
     }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
         try {
-            LoginRequestDTO requestDto = new ObjectMapper().readValue(request.getInputStream(), LoginRequestDTO.class);
+            LoginRequest requestDto = new ObjectMapper().readValue(request.getInputStream(), LoginRequest.class);
 
             return getAuthenticationManager().authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            requestDto.getEmail(),
+                            requestDto.getUseremail(),
                             requestDto.getPassword(),
                             null
                     )
@@ -44,27 +43,18 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         }
     }
 
-    //로그인 성공시
     @Override
-    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException {
-        String email = ((UserDetailsImpl) authResult.getPrincipal()).getUser().getEmail();
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) {
+        String username = ((UserDetailsImpl) authResult.getPrincipal()).getUsername();
+        String role = ((UserDetailsImpl) authResult.getPrincipal()).getUser().getRole().name();
 
-        String accessToken = jwtUtil.createAccessToken(email);
-
-        // 응답 헤더에 토큰 추가
-        response.addHeader(JwtUtil.AUTHORIZATION_HEADER, accessToken);
-        log.info("User = {}, message = {}", email, "로그인에 성공했습니다.");
+        String token = jwtUtil.createToken(username, role);
+        response.addHeader(JwtUtil.AUTHORIZATION_HEADER, token);
     }
-
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) {
-        response.setStatus(400);
-        response.setContentType("application/json; charset=UTF-8");
-        try {
-            response.getWriter().write("{\"message\":\"회원을 찾을 수 없습니다.\"}");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        response.setStatus(401);
     }
+
 }
