@@ -4,25 +4,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    depends_on:
-      db:
-        condition: service_healthy
+#    depends_on:
+#      - db
     ports:
       - "8080:8080"
-
-  db:
-    image: mysql:8.0
-    container_name: mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: mysql1234
-      MYSQL_DATABASE: streaming
-      MYSQL_BIND_ADDRESS: 0.0.0.0
-    ports:
-      - "3306:3306"
+    networks:
+      - spring-network
 
 
-
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -pmysql1234"]
-      interval: 5s
-      retries: 10
+networks:
+  spring-network:
+    driver: bridge

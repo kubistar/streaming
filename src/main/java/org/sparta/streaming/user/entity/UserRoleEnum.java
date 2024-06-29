@@ -1,4 +1,4 @@
-package org.sparta.streaming.entity;
+package org.sparta.streaming.user.entity;
 
 
 public enum UserRoleEnum {
