@@ -37,15 +37,16 @@ public class JwtUtil {
     }
 
     // 토큰 생성
-    public String createToken(String useremail, String role) {
+    public String createToken(Long userId, String useremail, String role) {
         Date date = new Date();
         Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userId); // 사용자 ID 추가
         claims.put("role", role);
         claims.put("useremail", useremail);
 
         return BEARER_PREFIX +
                 Jwts.builder()
-                        .setSubject(useremail) // 사용자 이메일
+                        .setSubject(String.valueOf(userId)) // Subject를 사용자 ID로 설정
                         .setClaims(claims)
                         .setExpiration(new Date(date.getTime() + TOKEN_TIME)) // 만료 시간
                         .setIssuedAt(date) // 발급일
@@ -83,4 +84,6 @@ public class JwtUtil {
     public Claims getUserInfoFromToken(String token) {
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
     }
+
+
 }

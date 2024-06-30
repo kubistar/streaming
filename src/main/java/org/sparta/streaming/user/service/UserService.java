@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 
 @Service
@@ -32,10 +33,15 @@ public class UserService {
             throw new IllegalArgumentException("Invalid username or password");
         }
 
-        String accessToken = jwtUtil.createToken(useremail, user.getRole().name());
+        String accessToken = jwtUtil.createToken(user.getUserId(), useremail, user.getRole().name());
 
         Map<String, String> tokens = new HashMap<>();
         tokens.put("accessToken", accessToken);
         return tokens;
     }
+
+
+
+
+
 }
