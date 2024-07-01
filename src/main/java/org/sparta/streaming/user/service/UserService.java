@@ -41,7 +41,12 @@ public class UserService {
     }
 
 
-
+    public void updateUserToUploader(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found!"));
+        user.updateToUploader();
+        userRepository.save(user);
+    }
 
 
 }

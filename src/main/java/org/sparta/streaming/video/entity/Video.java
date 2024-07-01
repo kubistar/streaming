@@ -31,4 +31,8 @@ public class Video {
 
     @Column(nullable = true)
     private LocalDateTime lastModifiedDate;   //  업데이트한 날짜
+
+
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    private Boolean isVisible = true;
 }

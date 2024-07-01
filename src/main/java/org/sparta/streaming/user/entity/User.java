@@ -29,4 +29,8 @@ public class User {
         this.password = password;
         this.role = Role.USER;
     }
+
+    public void updateToUploader() {
+        this.role = Role.UPLOADER;
+    }
 }

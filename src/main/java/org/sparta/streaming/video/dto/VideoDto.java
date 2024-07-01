@@ -15,4 +15,5 @@ public class VideoDto {
     private String description;
     private LocalDateTime uploadDate;
     private LocalDateTime lastModifiedDate;
+    private boolean isVisible;
 }
