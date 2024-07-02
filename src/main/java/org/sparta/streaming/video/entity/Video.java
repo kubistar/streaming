@@ -27,7 +27,7 @@ public class Video {
     private String description;
 
     @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime uploadDate;
+    private LocalDateTime uploadDate = LocalDateTime.now();;
 
     @Column(nullable = true)
     private LocalDateTime lastModifiedDate;   //  업데이트한 날짜
