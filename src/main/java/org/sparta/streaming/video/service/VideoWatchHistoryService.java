@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 
 
@@ -43,13 +44,10 @@ public class VideoWatchHistoryService {
     }
 
     public VideoWatchHistory startWatching(Long userId, Long videoId) {
-        Optional<VideoWatchHistory> lastWatchHistory = watchHistoryRepository.findLastUnfinishedByUserIdAndVideoId(userId, videoId);
-
-        if (lastWatchHistory.isPresent() && !isVideoCompleted(lastWatchHistory.get())) {
+        List<VideoWatchHistory> histories = watchHistoryRepository.findLastUnfinishedByUserIdAndVideoId(userId, videoId);
+        if (!histories.isEmpty() && !isVideoCompleted(histories.get(0))) {
+            VideoWatchHistory watchHistory = histories.get(0);
             // 이전 시청 기록에서 계속 재생
-            VideoWatchHistory watchHistory = lastWatchHistory.get();
-            // 설정된 이전 시청 종료 시간으로부터 재생 시작
-            watchHistory.setStartTime(LocalDateTime.now());
             return watchHistory;
         } else {
             // 새로운 시청 기록 생성
@@ -67,12 +65,48 @@ public class VideoWatchHistoryService {
 
         if (lastWatchHistory.isPresent()) {
             VideoWatchHistory watchHistory = lastWatchHistory.get();
-            watchHistory.setEndTime(LocalDateTime.now());
-            long seconds = ChronoUnit.SECONDS.between(watchHistory.getStartTime(), watchHistory.getEndTime());
-            watchHistory.setWatchedTimeSeconds(seconds);
-            return repository.save(watchHistory);
+
+            // 비디오 정보 가져오기
+            Video video = videoRepository.findById(watchHistory.getVideoId())
+                    .orElseThrow(() -> new RuntimeException("Video not found for ID: " + watchHistory.getVideoId()));
+
+            // 시청 종료 시간 설정
+            LocalDateTime now = LocalDateTime.now();
+            watchHistory.setEndTime(now);
+
+            // 이 세션에서의 시청 시간 계산
+            long sessionWatchedSeconds = ChronoUnit.SECONDS.between(watchHistory.getStartTime(), now);
+
+            // 총 시청 시간 계산
+            long totalWatchedSeconds = (watchHistory.getWatchedTimeSeconds() != null ? watchHistory.getWatchedTimeSeconds() : 0) + sessionWatchedSeconds;
+
+            // 비디오 길이를 초과하지 않도록 시청 시간 제한
+            totalWatchedSeconds = Math.min(totalWatchedSeconds, video.getVideoLength());
+
+            // 시청 기록 저장
+            watchHistory.setWatchedTimeSeconds(totalWatchedSeconds);
+            repository.save(watchHistory);
+
+            // 비디오를 완전히 시청했는지 확인 후 리셋
+            if (totalWatchedSeconds >= video.getVideoLength()) {
+                // 새로운 시청 기록을 시작할 때 기존 시청 기록을 리셋
+                VideoWatchHistory newWatchHistory = new VideoWatchHistory();
+                newWatchHistory.setUserId(userId);
+                newWatchHistory.setVideoId(video.getVideoId());
+                newWatchHistory.setStartTime(LocalDateTime.now());
+                newWatchHistory.setWatchedTimeSeconds(0L);
+//                repository.save(newWatchHistory);
+                return newWatchHistory;
+            }
+
+            return watchHistory;
         } else {
             throw new RuntimeException("No active watch history found for user ID: " + userId);
         }
     }
+
+
+
+
+
 }
