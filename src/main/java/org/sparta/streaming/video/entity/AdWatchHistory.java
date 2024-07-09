@@ -4,22 +4,21 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 
 @Entity
 @Getter
 @Setter
-public class VideoAds {
+public class AdWatchHistory {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
     private Integer videoAdsId;
 
     @Column(nullable = false)
-    private Long videoId;
-
-    @Column(nullable = false)
-    private Integer adId;
-
-    @Column(nullable = false)
-    private int adPosition; // 광고가 삽입될 위치 (초 단위)
-
+    private LocalDateTime watchedAt;
 }

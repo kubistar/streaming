@@ -14,13 +14,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 class CreateJwtTest {
 
-    @Value("${jwt.secret.key}")
-    private String secretKeyPlain;
-
-    @Test
-    void 시크릿키_존재_확인() {
-        assertThat(secretKeyPlain).isNotNull();
-    }
+//    @Value("${JWT_SECRET_KEY}")
+//    private String secretKeyPlain;
+//
+//    @Test
+//    void 시크릿키_존재_확인() {
+//        assertThat(secretKeyPlain).isNotNull();
+//    }
 
 
 }

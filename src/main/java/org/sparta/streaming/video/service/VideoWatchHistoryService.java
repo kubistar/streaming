@@ -25,6 +25,9 @@ public class VideoWatchHistoryService {
     @Autowired
     private VideoRepository videoRepository;
 
+    @Autowired
+    private AdWatchHistoryService adWatchHistoryService;
+
     /**
      * 이 메서드는 주어진 비디오 시청 기록이 완료되었는지 여부를 판단합니다.
      * 완료 여부는 사용자가 비디오의 총 길이만큼 시청했는지에 대한 시청 시간으로 결정됩니다.
@@ -86,6 +89,9 @@ public class VideoWatchHistoryService {
             // 시청 기록 저장
             watchHistory.setWatchedTimeSeconds(totalWatchedSeconds);
             repository.save(watchHistory);
+
+            // 광고 시청 기록 저장
+            adWatchHistoryService.saveAdWatchHistory(video.getVideoId(), totalWatchedSeconds);
 
             // 비디오를 완전히 시청했는지 확인 후 리셋
             if (totalWatchedSeconds >= video.getVideoLength()) {
