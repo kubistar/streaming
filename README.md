@@ -34,6 +34,11 @@
 <br>
 
 ## 🐞 트러블 슈팅
+### chunk read 동시성 제어  
+<details>
+<summary>복합적인 문제원인
+</summary>
+
 
 
 
