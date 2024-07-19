@@ -8,12 +8,21 @@ June 2024 ~ July 2024
 <img src="https://img.shields.io/badge/GitHub Actions-2088FF?style=for-the-badge&logo=GitHub Actions&logoColor=white">
 <br>
 
-🌱 프로젝트 소개
-대량의 영상 시청 기록에 대한 통계 및 정산 Batch 작업을 수행하는 프로젝트입니다.
-🛠️ 주요 기능
-통계 및 정산 기능
-관련 API 기능
-🚀 아키텍처
+## 🌱 프로젝트 소개
+- 대량의 영상 시청기록에 대한 통계 및 정산 Batch 작업
+
+<br>
+
+## 🛠️ 주요 기능
+1. 통계 및 정산 기능  
+ 
+3. [관련 API 기능](#관련-API-기능)
+
+<br>
+
+## 🚀 아키텍처
+![무제 001]()
+<br>
 
 
 📚 기술적 의사결정
