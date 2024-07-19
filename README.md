@@ -31,7 +31,7 @@ June 2024 ~ July 2024
 ## 🐞 트러블 슈팅
 ### 
 <details>
-<summary></summary>
+<summary>복합적인 문제원인</summary>
 <!-- 내용 입력 -->
 
 
