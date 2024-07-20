@@ -1,4 +1,4 @@
-정산 프로젝트 (Streaming)
+## 정산 프로젝트 (Streaming)
 📚 Notion |
 June 2024 ~ July 2024
 
