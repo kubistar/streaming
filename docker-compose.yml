@@ -1,17 +1,119 @@
 version: '3.8'
+
 services:
+  # ========================================
+  # MySQL 데이터베이스
+  # ========================================
+  mysql:
+    image: mysql:8.0
+    container_name: streaming-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: streaming_payment_db
+      MYSQL_USER: streaming_user
+      MYSQL_PASSWORD: streaming1234
+      TZ: Asia/Seoul
+    ports:
+      - "3306:3306"
+    volumes:
+      # 데이터 영속성 (컨테이너 재시작해도 데이터 유지)
+      - mysql-data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    networks:
+      - spring-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot1234"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================
+  # Redis (캐시 & 어뷰징 방지)
+  # ========================================
+  redis:
+    image: redis:7-alpine
+    container_name: streaming-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --requirepass redis1234
+    networks:
+      - spring-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================
+  # Spring Boot 애플리케이션
+  # ========================================
   myapp:
     build:
       context: .
       dockerfile: Dockerfile
-#    depends_on:
-#      - db
+    container_name: streaming-app
+    restart: always
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - "8080:8080"
+    environment:
+      # Spring Profiles (local, dev, prod 등)
+      SPRING_PROFILES_ACTIVE: docker
+
+      # MySQL 연결 정보
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/streaming_payment_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+      SPRING_DATASOURCE_USERNAME: streaming_user
+      SPRING_DATASOURCE_PASSWORD: streaming1234
+
+      # Redis 연결 정보
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: redis1234
+
+      # JPA 설정
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_JPA_SHOW_SQL: true
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: true
+
+      # 서버 포트
+      SERVER_PORT: 8080
+
+      # 로그 레벨
+      LOGGING_LEVEL_ROOT: INFO
+      LOGGING_LEVEL_COM_YOURPACKAGE: DEBUG
     networks:
       - spring-network
+    # 헬스체크 (옵션)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-
+# ========================================
+# 네트워크 설정
+# ========================================
 networks:
   spring-network:
     driver: bridge
+
+# ========================================
+# 볼륨 설정 (데이터 영속성)
+# ========================================
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local
