@@ -111,4 +111,13 @@ public class VideoWatchHistory {
                 .ipAddress(ipAddress)
                 .build();
     }
+
+    /**
+     * 시청 위치만 업데이트 (시청 시간 계산 안함)
+     * 건너뛰기, 되감기, 주기적 저장 시 사용
+     */
+    public void updatePositionOnly(Integer currentPosition) {
+        this.lastWatchedPosition = currentPosition;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

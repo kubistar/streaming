@@ -23,6 +23,7 @@ import org.springframework.batch.item.database.JpaItemWriter;
 import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -33,6 +34,7 @@ import java.time.LocalDate;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
+@Profile("batch")  // batch 프로필에서만 활성화
 public class DailySettlementBatchConfig {
 
     private final JobRepository jobRepository;

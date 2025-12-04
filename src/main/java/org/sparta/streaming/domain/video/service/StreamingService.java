@@ -146,7 +146,10 @@ public class StreamingService {
 
         // 위치 검증 후 업데이트
         int currentPosition = validatePosition(stopRequest.getCurrentPosition(), video.getVideoLengthSeconds());
-        watchHistory.updateWatchPosition(currentPosition, previousPosition);
+        watchHistory.updatePositionOnly(currentPosition);  // 🔥 변경!
+
+        log.info("=== 위치만 업데이트 (시청 시간 계산 안함) ===");
+        log.info("새 위치: %d초".formatted(currentPosition));
     }
 
     /**
@@ -212,8 +215,8 @@ public class StreamingService {
      * 광고 시청 처리
      */
     private int processAdWatch(Video video, User user, int previousPosition, int currentPosition, String ipAddress) {
-        System.out.println("=== 광고 시청 처리 시작 ===");
-        System.out.println("이전 위치: " + previousPosition + "초, 현재 위치: " + currentPosition + "초");
+        log.info("=== 광고 시청 처리 시작 ===");
+        log.info("이전 위치: %d초, 현재 위치: %d초".formatted(previousPosition, currentPosition));
 
         // 전체 광고 조회
         List<VideoAds> allAds = videoAdsRepository
@@ -221,7 +224,7 @@ public class StreamingService {
 
         System.out.println("동영상의 전체 광고: " + allAds.size() + "개");
         for (VideoAds ad : allAds) {
-            System.out.println("  - " + ad.getPositionSeconds() + "초에 광고");
+            log.info("  - %d초에 광고".formatted(ad.getPositionSeconds()));
         }
 
         // 이번 구간에서 통과한 광고들
@@ -236,7 +239,7 @@ public class StreamingService {
                 })
                 .toList();
 
-        System.out.println("이번에 통과한 광고: " + adsToWatch.size() + "개");
+        log.info("이번에 통과한 광고: {}개", adsToWatch.size());
 
         int count = 0;
         for (VideoAds videoAds : adsToWatch) {
@@ -245,11 +248,11 @@ public class StreamingService {
             AdWatchHistory adWatch = AdWatchHistory.create(videoAds, user, ipAddress, true);
             adWatchHistoryRepository.save(adWatch);
             count++;
-            System.out.println("    → ✅ 광고 시청 기록 저장!");
+            log.info("    → ✅ 광고 시청 기록 저장!");
         }
 
-        System.out.println("총 새로 기록된 광고: " + count + "개");
-        System.out.println("===================");
+        log.info("총 새로 기록된 광고: {}개", count);
+        log.info("===================");
         return count;
     }
 

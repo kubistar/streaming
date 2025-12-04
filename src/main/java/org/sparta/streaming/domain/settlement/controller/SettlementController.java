@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.sparta.streaming.domain.settlement.dto.SettlementResponse;
 import org.sparta.streaming.domain.settlement.dto.VideoSettlementResponse;
 import org.sparta.streaming.domain.settlement.service.SettlementService;
+import org.springframework.context.annotation.Profile;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import java.time.LocalDate;
 @RestController
 @RequestMapping("/api/settlement")
 @RequiredArgsConstructor
+@Profile("settlement")  // settlement 프로필에서만 활성화
 public class SettlementController {
 
     private final SettlementService settlementService;

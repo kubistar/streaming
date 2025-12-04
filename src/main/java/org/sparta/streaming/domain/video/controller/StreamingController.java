@@ -10,11 +10,13 @@ import org.sparta.streaming.domain.video.dto.PlayResponse;
 import org.sparta.streaming.domain.video.dto.StopRequest;
 import org.sparta.streaming.domain.video.dto.StopResponse;
 import org.sparta.streaming.domain.video.service.StreamingService;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@Profile("streaming")  // streaming 프로필에서만 활성화
 @RequestMapping("/api/streaming")
 @RequiredArgsConstructor
 public class StreamingController {
@@ -63,7 +65,7 @@ public class StreamingController {
      * 현재 위치만 업데이트
      * 건너뛰기, 되감기
      */
-    @PostMapping("/update-positon/{videoId}")
+    @PostMapping("/update-position/{videoId}")
     public ResponseEntity<String> updatePoiton(
             @PathVariable Integer videoId,
             @AuthenticationPrincipal UserDetailsImpl userDetails,
