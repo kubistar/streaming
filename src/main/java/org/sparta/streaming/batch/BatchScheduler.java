@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 
 @Slf4j
 @Component
-@Profile({"batch", "!test"})  // batch 프로필에서만 활성화 테스트 환경에서는 자동 실행 안 함
+@Profile("batch")  // batch 프로필에서만 활성화
 @RequiredArgsConstructor
 public class BatchScheduler {
 

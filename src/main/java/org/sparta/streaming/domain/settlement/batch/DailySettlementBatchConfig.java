@@ -73,65 +73,66 @@ public class DailySettlementBatchConfig {
      */
     @Bean
     public JdbcCursorItemReader<SettlementSourceDto> settlementReader() {
+        // CTE와 LEFT JOIN을 사용한 개선된 쿼리
         String sql = """
+            WITH settlement_target AS (
+                SELECT DISTINCT video_id
+                FROM daily_video_statistics
+                WHERE stat_date = CURDATE() - INTERVAL 1 DAY
+            ),
+            video_stats AS (
+                SELECT 
+                    video_id,
+                    COALESCE(SUM(CASE WHEN stat_date < CURDATE() - INTERVAL 1 DAY THEN view_count ELSE 0 END), 0) as previous_total_views,
+                    COALESCE(SUM(CASE WHEN stat_date = CURDATE() - INTERVAL 1 DAY THEN view_count ELSE 0 END), 0) as today_views
+                FROM daily_video_statistics
+                WHERE video_id IN (SELECT video_id FROM settlement_target)
+                GROUP BY video_id
+            ),
+            ad_stats AS (
+                SELECT 
+                    va.video_id,
+                    COUNT(CASE WHEN DATE(awh.created_at) < CURDATE() - INTERVAL 1 DAY THEN 1 END) as previous_total_ad_views,
+                    COUNT(CASE WHEN DATE(awh.created_at) = CURDATE() - INTERVAL 1 DAY THEN 1 END) as today_ad_views
+                FROM video_ads va
+                INNER JOIN ad_watch_history awh ON va.video_ads_id = awh.video_ads_id
+                WHERE va.video_id IN (SELECT video_id FROM settlement_target)
+                  AND awh.view_counted = true
+                  AND DATE(awh.created_at) <= CURDATE() - INTERVAL 1 DAY
+                GROUP BY va.video_id
+            )
             SELECT 
                 v.video_id,
                 v.user_id,
                 CURDATE() - INTERVAL 1 DAY as settlement_date,
-                
-                -- 어제까지 누적 조회수
-                COALESCE((
-                    SELECT SUM(view_count) 
-                    FROM daily_video_statistics 
-                    WHERE video_id = v.video_id 
-                      AND stat_date < CURDATE() - INTERVAL 1 DAY
-                ), 0) as previous_total_views,
-                
-                -- 어제 조회수
-                COALESCE((
-                    SELECT view_count 
-                    FROM daily_video_statistics 
-                    WHERE video_id = v.video_id 
-                      AND stat_date = CURDATE() - INTERVAL 1 DAY
-                ), 0) as today_views,
-                
-                -- 어제까지 누적 광고 조회수
-                COALESCE((
-                    SELECT COUNT(*)
-                    FROM ad_watch_history awh
-                    JOIN video_ads va ON awh.video_ads_id = va.video_ads_id
-                    WHERE va.video_id = v.video_id
-                      AND DATE(awh.created_at) < CURDATE() - INTERVAL 1 DAY
-                      AND awh.view_counted = true
-                ), 0) as previous_total_ad_views,
-                
-                -- 어제 광고 조회수
-                COALESCE((
-                    SELECT COUNT(*)
-                    FROM ad_watch_history awh
-                    JOIN video_ads va ON awh.video_ads_id = va.video_ads_id
-                    WHERE va.video_id = v.video_id
-                      AND DATE(awh.created_at) = CURDATE() - INTERVAL 1 DAY
-                      AND awh.view_counted = true
-                ), 0) as today_ad_views
-                
+                COALESCE(vs.previous_total_views, 0) as previous_total_views,
+                COALESCE(vs.today_views, 0) as today_views,
+                COALESCE(ad.previous_total_ad_views, 0) as previous_total_ad_views,
+                COALESCE(ad.today_ad_views, 0) as today_ad_views
             FROM videos v
-            WHERE EXISTS (
-                SELECT 1 FROM daily_video_statistics 
-                WHERE video_id = v.video_id 
-                  AND stat_date = CURDATE() - INTERVAL 1 DAY
-            )
+            INNER JOIN settlement_target st ON v.video_id = st.video_id
+            LEFT JOIN video_stats vs ON v.video_id = vs.video_id
+            LEFT JOIN ad_stats ad ON v.video_id = ad.video_id
             """;
 
-        RowMapper<SettlementSourceDto> rowMapper = (rs, rowNum) -> new SettlementSourceDto(
-                rs.getInt("video_id"),
-                rs.getInt("user_id"),
-                rs.getDate("settlement_date").toLocalDate(),
-                rs.getInt("previous_total_views"),
-                rs.getInt("today_views"),
-                rs.getInt("previous_total_ad_views"),
-                rs.getInt("today_ad_views")
-        );
+        RowMapper<SettlementSourceDto> rowMapper = (rs, rowNum) -> {
+            int videoId = rs.getInt("video_id");
+            int userId = rs.getInt("user_id");
+            LocalDate settlementDate = rs.getDate("settlement_date").toLocalDate();
+            int previousTotalViews = rs.getInt("previous_total_views");
+            int todayViews = rs.getInt("today_views");
+            int previousTotalAdViews = rs.getInt("previous_total_ad_views");
+            int todayAdViews = rs.getInt("today_ad_views");
+
+            log.debug("Read settlement source: videoId={}, previousAdViews={}, todayAdViews={}",
+                    videoId, previousTotalAdViews, todayAdViews);
+
+            return new SettlementSourceDto(
+                    videoId, userId, settlementDate,
+                    previousTotalViews, todayViews,
+                    previousTotalAdViews, todayAdViews
+            );
+        };
 
         return new JdbcCursorItemReaderBuilder<SettlementSourceDto>()
                 .name("settlementReader")
@@ -168,8 +169,10 @@ public class DailySettlementBatchConfig {
             int totalViews = source.previousTotalViews() + source.todayViews();
             int totalAdViews = source.previousTotalAdViews() + source.todayAdViews();
 
-            log.info("정산 생성: videoId={}, date={}, videoAmount={}, adAmount={}, total={}",
-                    source.videoId(), source.settlementDate(), videoAmount, adAmount, videoAmount.add(adAmount));
+            log.info("정산 처리: videoId={}, date={}, prevAdViews={}, todayAdViews={}, totalAdViews={}, videoAmount={}, adAmount={}, total={}",
+                    source.videoId(), source.settlementDate(),
+                    source.previousTotalAdViews(), source.todayAdViews(), totalAdViews,
+                    videoAmount, adAmount, videoAmount.add(adAmount));
 
             return DailyVideoSettlement.create(
                     video,

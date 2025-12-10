@@ -17,6 +17,7 @@ import org.sparta.streaming.domain.video.entity.Video;
 import org.sparta.streaming.domain.video.entity.VideoWatchHistory;
 import org.sparta.streaming.domain.video.repository.VideoRepository;
 import org.sparta.streaming.domain.video.repository.VideoWatchHistoryRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,7 @@ import java.util.Random;
 public class DummyDataGenerator {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;  // 🔥 추가!
     private final VideoRepository videoRepository;
     private final VideoWatchHistoryRepository watchHistoryRepository;
     private final AdRepository adRepository;
@@ -78,15 +80,18 @@ public class DummyDataGenerator {
     }
 
     /**
-     * 사용자 생성
+     * 사용자 생성 (비밀번호 암호화)
      */
     private List<User> generateUsers(int count) {
         List<User> users = new ArrayList<>();
 
         for (int i = 0; i < count; i++) {
+            // 🔥 비밀번호 암호화!
+            String encodedPassword = passwordEncoder.encode("password123");
+
             User user = User.createUser(
                     "user" + i + "@test.com",
-                    "encoded_password_" + i,
+                    encodedPassword,  // 🔥 암호화된 비밀번호
                     "User" + i
             );
             users.add(user);

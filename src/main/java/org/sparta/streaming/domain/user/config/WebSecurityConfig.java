@@ -79,15 +79,25 @@ public class WebSecurityConfig {
                         // 메인 페이지 허용
                         .requestMatchers("/").permitAll()
 
-                        // 회원가입, 로그인 허용 (중요!)
+                        // 회원가입, 로그인 허용
                         .requestMatchers("/api/users/signup").permitAll()
                         .requestMatchers("/api/users/login").permitAll()
+
+                        // 🔥 더미 데이터 및 배치 API 허용 (개발/테스트용)
+                        .requestMatchers("/api/dummy/**").permitAll()
+                        .requestMatchers("/api/batch/**").permitAll()
 
                         // 동영상 조회 허용
                         .requestMatchers("/api/videos/**").permitAll()
 
                         // 스트리밍
                         .requestMatchers("/api/streaming/**").authenticated()
+
+                        // 🔥 통계 API - 판매자만 접근 가능
+                        .requestMatchers("/api/statistics/**").hasRole("SELLER")
+
+                        // 🔥 정산 API - 판매자만 접근 가능
+                        .requestMatchers("/api/settlement/**").hasRole("SELLER")
 
                         // 판매자 권한 필요
                         .requestMatchers("/api/seller/**").hasRole("SELLER")
